@@ -36,7 +36,8 @@ class CommonClient(object):
 
         p = subprocess.Popen(cmd, 
                              stdout=subprocess.PIPE, 
-                             stderr=subprocess.STDOUT)
+                             stderr=subprocess.STDOUT,
+                             universal_newlines=not return_binary)
 
         stdout = p.stdout.read()
         r = p.wait()
@@ -48,7 +49,7 @@ class CommonClient(object):
         if return_binary is True:
             return stdout
 
-        return stdout if combine is True else stdout.split("\n")
+        return stdout if combine is True else stdout.splitlines()
 
     def rows_to_dict(self, rows, lc=True):
         d = {}
@@ -132,8 +133,6 @@ class CommonClient(object):
         # Set some more intuitive keys, because no one likes dealing with 
         # symbols. However, we retain the old ones to maintain backwards-
         # compatibility.
-
-# TODO(dustin): Should we be casting the integers?
 
         info['entry_kind'] = info['entry#kind']
         info['entry_path'] = info['entry#path']
