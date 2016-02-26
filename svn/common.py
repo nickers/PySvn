@@ -155,7 +155,7 @@ class CommonClient(object):
                 return_binary=True)
 
     def log_default(self, timestamp_from_dt=None, timestamp_to_dt=None, 
-                    limit=None, rel_filepath=None):
+                    limit=None, rel_filepath=None, changes=False):
         """Allow for the most-likely kind of log listing: the complete list, a 
         FROM and TO timestamp, a FROM timestamp only, or a quantity limit.
         """
@@ -187,6 +187,9 @@ class CommonClient(object):
         if limit is not None:
             args += ['-l', str(limit)]
 
+        if changes:
+            args += ['-v']
+
         result = self.run_command(
                     'log', 
                     args + ['--xml', full_url_or_path], 
@@ -195,7 +198,13 @@ class CommonClient(object):
         root = xml.etree.ElementTree.fromstring(result)
         c = collections.namedtuple(
                 'LogEntry', 
-                ['date', 'msg', 'revision', 'author'])
+                ['date', 'msg', 'revision', 'author', 'changes'])
+
+        file_entry =  collections.namedtuple(
+            'LogFileEntry',
+            ['action', 'path'])
+
+        get_changed_files =  lambda log_entry: [file_entry(action=path.attrib['action'], path=path.text) for paths in log_entry.getchildren() if paths.tag=='paths' for path in paths]
         
         for e in root.findall('logentry'):
             entry_info = {x.tag: x.text for x in e.getchildren()}
@@ -204,7 +213,8 @@ class CommonClient(object):
                 msg=entry_info['msg'],
                 author=entry_info['author'],
                 revision=int(e.get('revision')),
-                date=dateutil.parser.parse(entry_info['date']))
+                date=dateutil.parser.parse(entry_info['date']),
+                changes=get_changed_files(e) if changes else [])
 
 
     def export(self, to_path, revision=None):
