@@ -10,12 +10,16 @@ class RemoteClient(svn.common.CommonClient):
             svn.constants.LT_URL, 
             *args, **kwargs)
 
-    def checkout(self, path, revision=None):
+    def checkout(self, path, revision=None, subdir=None):
         cmd = []
         if revision is not None:
             cmd += ['-r', str(revision)]
 
-        cmd += [self.url, path]
+        url = self.url
+        if subdir is not None:
+            url += u'/' if url[-1] != '/' else ''
+            url += subdir if subdir[:1] != '/' else subdir[1:]
+        cmd += [url, path]
 
         self.run_command('checkout', cmd)
 
