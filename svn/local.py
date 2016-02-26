@@ -14,5 +14,13 @@ class LocalClient(svn.common.CommonClient):
             svn.constants.LT_PATH, 
             *args, **kwargs)
 
+    def update(self, revision=None):
+        cmd = []
+        if revision is not None:
+            cmd = ['-r', str(revision)]
+        cmd += [self.path]
+
+        self.run_command('update', cmd)
+
     def __repr__(self):
         return ('<SVN(LOCAL) %s>' % (self.path))
