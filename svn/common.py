@@ -154,8 +154,11 @@ class CommonClient(object):
                 [self.__url_or_path + '/' + rel_filepath], 
                 return_binary=True)
 
+    def log(self, *args, **kwargs):
+        return self.log_default(*args, **kwargs)
+
     def log_default(self, timestamp_from_dt=None, timestamp_to_dt=None, 
-                    limit=None, rel_filepath=None, changes=False):
+                    limit=None, rel_filepath=None, changes=False, revision=None):
         """Allow for the most-likely kind of log listing: the complete list, a 
         FROM and TO timestamp, a FROM timestamp only, or a quantity limit.
         """
@@ -183,6 +186,10 @@ class CommonClient(object):
                 timestamp_to_phrase = 'HEAD'
 
             args += ['-r', timestamp_from_phrase + ':' + timestamp_to_phrase]
+        
+        if revision is not None:
+            args += ['-r', str(int(revision))]
+
 
         if limit is not None:
             args += ['-l', str(limit)]
