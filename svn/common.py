@@ -41,11 +41,9 @@ class CommonClient(object):
 
         stdout = p.stdout.read()
         r = p.wait()
-
         if r != success_code:
             raise ValueError("Command failed with (%d): %s\n%s" % 
                              (p.returncode, cmd, stdout))
-
         if return_binary is True:
             return stdout
 
@@ -234,64 +232,65 @@ class CommonClient(object):
 
         self.run_command('export', cmd)
 
+
     def list(self, extended=False, rel_path=None):
         full_url_or_path = self.__url_or_path
         if rel_path is not None:
             full_url_or_path += '/' + rel_path
 
-        if extended is False:
-            for line in self.run_command(
-                                'ls', 
-                                [full_url_or_path]):
-                line = line.strip()
-                if line:
-                    yield line
-
-        else:
             raw = self.run_command(
-                    'ls', 
-                    ['--xml', full_url_or_path], 
-                    combine=True)
+                'ls',
+                ['--xml', full_url_or_path],
+                return_binary=True,
+                combine=True)
 
             root = xml.etree.ElementTree.fromstring(raw)
 
             list_ = root.findall('list/entry')
-            for entry in list_:
-                entry_attr = entry.attrib
 
-                kind = entry_attr['kind']
-                name = entry.find('name').text
-                
-                size = entry.find('size')
+            if extended is False:
+                for entry in list_:
+                    kind = entry.attrib['kind']
+                    name = entry.find('name').text
+                    yield name + '/' if kind == svn.constants.K_DIR else name
+            else:
+                for entry in list_:
+                    entry_attr = entry.attrib
 
-                # This will be None for directories.
-                if size is not None:
-                    size = int(size.text)
-                
-                commit_node = entry.find('commit')
-                
-                author = commit_node.find('author').text
-                date = dateutil.parser.parse(commit_node.find('date').text)
+                    kind = entry_attr['kind']
+                    name = entry.find('name').text
 
-                commit_attr = commit_node.attrib
-                revision = int(commit_attr['revision'])
+                    size = entry.find('size')
 
-                yield {
-                    'kind': kind,
+                    # This will be None for directories.
+                    if size is not None:
+                        size = int(size.text)
 
-                    # To decouple people from the knowledge of the value.
-                    'is_directory': kind == svn.constants.K_DIR,
+                    commit_node = entry.find('commit')
 
-                    'name': name, 
-                    'size': size,
-                    'author': author,
-                    'date': date,
-                    
-                    # Our approach to normalizing a goofy field-name.
-                    'timestamp': date,
+                    author = commit_node.find('author').text
+                    date = dateutil.parser.parse(commit_node.find('date').text)
 
-                    'commit_revision': revision,
-                }
+                    commit_attr = commit_node.attrib
+                    revision = int(commit_attr['revision'])
+
+                    yield {
+                        'kind': kind,
+
+                        # To decouple people from the knowledge of the value.
+                        'is_directory': kind == svn.constants.K_DIR,
+
+                        'name': name,
+                        'size': size,
+                        'author': author,
+                        'date': date,
+
+                        # Our approach to normalizing a goofy field-name.
+                        'timestamp': date,
+
+                        'commit_revision': revision,
+                    }
+
 
     def list_recursive(self, rel_path=None, yield_dirs=False, 
                        path_filter_cb=None):
