@@ -238,58 +238,59 @@ class CommonClient(object):
         if rel_path is not None:
             full_url_or_path += '/' + rel_path
 
-            raw = self.run_command(
-                'ls',
-                ['--xml', full_url_or_path],
-                return_binary=True,
-                combine=True)
+        raw = self.run_command(
+            'ls',
+            ['--xml', full_url_or_path],
+            return_binary=True,
+            combine=True)
 
-            root = xml.etree.ElementTree.fromstring(raw)
+        root = xml.etree.ElementTree.fromstring(raw)
 
-            list_ = root.findall('list/entry')
+        list_ = root.findall('list/entry')
 
-            if extended is False:
-                for entry in list_:
-                    kind = entry.attrib['kind']
-                    name = entry.find('name').text
-                    yield name + '/' if kind == svn.constants.K_DIR else name
-            else:
-                for entry in list_:
-                    entry_attr = entry.attrib
+        if extended is False:
+            for entry in list_:
+                kind = entry.attrib['kind']
+                name = entry.find('name').text
+                yield name + '/' if kind == svn.constants.K_DIR else name
+        else:
+            for entry in list_:
+                entry_attr = entry.attrib
 
-                    kind = entry_attr['kind']
-                    name = entry.find('name').text
+                kind = entry_attr['kind']
+                name = entry.find('name').text
 
-                    size = entry.find('size')
+                size = entry.find('size')
 
-                    # This will be None for directories.
-                    if size is not None:
-                        size = int(size.text)
+                # This will be None for directories.
+                if size is not None:
+                    size = int(size.text)
 
-                    commit_node = entry.find('commit')
+                commit_node = entry.find('commit')
 
-                    author = commit_node.find('author').text
-                    date = dateutil.parser.parse(commit_node.find('date').text)
+                author_node = commit_node.find('author')
+                author = author_node.text if author_node is not None else u''
+                date = dateutil.parser.parse(commit_node.find('date').text)
 
-                    commit_attr = commit_node.attrib
-                    revision = int(commit_attr['revision'])
+                commit_attr = commit_node.attrib
+                revision = int(commit_attr['revision'])
 
-                    yield {
-                        'kind': kind,
+                yield {
+                    'kind': kind,
 
-                        # To decouple people from the knowledge of the value.
-                        'is_directory': kind == svn.constants.K_DIR,
+                    # To decouple people from the knowledge of the value.
+                    'is_directory': kind == svn.constants.K_DIR,
 
-                        'name': name,
-                        'size': size,
-                        'author': author,
-                        'date': date,
+                    'name': name,
+                    'size': size,
+                    'author': author,
+                    'date': date,
 
-                        # Our approach to normalizing a goofy field-name.
-                        'timestamp': date,
+                    # Our approach to normalizing a goofy field-name.
+                    'timestamp': date,
 
-                        'commit_revision': revision,
-                    }
+                    'commit_revision': revision,
+                }
 
 
     def list_recursive(self, rel_path=None, yield_dirs=False, 
