@@ -1,5 +1,7 @@
+import io
 import os
 import subprocess
+import sys
 import logging
 import dateutil.parser
 import collections
@@ -29,25 +31,35 @@ class CommonClient(object):
         if self.__username is not None and self.__password is not None:
             cmd += ['--username', self.__username]
             cmd += ['--password', self.__password]
+            cmd += ['--no-auth-cache']
 
         cmd += [subcommand] + args
 
         _logger.debug("RUN: %s" % (cmd,))
+        return_binary = True
+
+        DETECTED_ENCODING=sys.stdout.encoding
 
         p = subprocess.Popen(cmd, 
                              stdout=subprocess.PIPE, 
                              stderr=subprocess.STDOUT,
                              universal_newlines=not return_binary)
+        try:
+            #stdout = io.TextIOWrapper(p.stdout, DETECTED_ENCODING).read() if not return_binary else p.stdout
+            stdout = io.TextIOWrapper(p.stdout, DETECTED_ENCODING).read()
+            r = p.wait()
+            if r != success_code:
+                raise ValueError("Command failed with (%d): %s\n%s" % 
+                                 (p.returncode, cmd, stdout))
+            if return_binary is True:
+                return stdout
 
-        stdout = p.stdout.read()
-        r = p.wait()
-        if r != success_code:
-            raise ValueError("Command failed with (%d): %s\n%s" % 
-                             (p.returncode, cmd, stdout))
-        if return_binary is True:
-            return stdout
-
-        return stdout if combine is True else stdout.splitlines()
+            return stdout if combine is True else stdout.splitlines()
+        except Exception as e:
+            print(' '.join(cmd))
+            import traceback
+            traceback.print_exc()
+            raise
 
     def rows_to_dict(self, rows, lc=True):
         d = {}

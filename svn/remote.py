@@ -21,7 +21,7 @@ class RemoteClient(svn.common.CommonClient):
             url += subdir if subdir[:1] != '/' else subdir[1:]
         cmd += [url, path]
 
-        self.run_command('checkout', cmd)
+        self.run_command('checkout', cmd, return_binary=True)
 
     def __repr__(self):
         return ('<SVN(REMOTE) %s>' % (self.url))
