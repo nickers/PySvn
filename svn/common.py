@@ -56,9 +56,9 @@ class CommonClient(object):
 
             return stdout if combine is True else stdout.splitlines()
         except Exception as e:
-            print(' '.join(cmd))
+            # print(' '.join(cmd))
             import traceback
-            traceback.print_exc()
+            # traceback.print_exc()
             raise
 
     def rows_to_dict(self, rows, lc=True):
