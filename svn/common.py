@@ -46,7 +46,8 @@ class CommonClient(object):
                              universal_newlines=not return_binary)
         try:
             #stdout = io.TextIOWrapper(p.stdout, DETECTED_ENCODING).read() if not return_binary else p.stdout
-            stdout = io.TextIOWrapper(p.stdout, DETECTED_ENCODING).read()
+            #stdout = io.TextIOWrapper(p.stdout, DETECTED_ENCODING).read()
+            stdout = p.stdout.read()
             r = p.wait()
             if r != success_code:
                 raise ValueError("Command failed with (%d): %s\n%s" % 
