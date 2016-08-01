@@ -20,7 +20,7 @@ setuptools.setup(
     keywords='svn subversion',
     author='Dustin Oprea',
     author_email='myselfasunder@gmail.com',
-    url='https://github.com/dsoprea/PySvn',
+    url='https://github.com/nickers/PySvn',
     license='GPL 2',
     packages=setuptools.find_packages(exclude=['test']),
     include_package_data=True,
