@@ -32,7 +32,13 @@ class LocalClient(svn.common.CommonClient):
         self.run_command('switch', cmd)
 
     def rm(self, path):
-        return self.run_command('rm', [path])
+        return self.run_command('rm', [os.path.join(self.path, path)])
+
+    def add(self, path):
+        return self.run_command('add', [os.path.join(self.path, path)])
+
+    def commit(self, message):
+       return self.run_command('commit', ['-m', message])
 
     def status(self, path=None):
         if path is not None:
