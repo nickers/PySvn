@@ -38,7 +38,7 @@ class LocalClient(svn.common.CommonClient):
         return self.run_command('add', [os.path.join(self.path, path)])
 
     def commit(self, message):
-       return self.run_command('commit', ['-m', message])
+       return self.run_command('commit', [self.path, '-m', message])
 
     def status(self, path=None):
         if path is not None:
