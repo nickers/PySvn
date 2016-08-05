@@ -40,6 +40,15 @@ class LocalClient(svn.common.CommonClient):
     def commit(self, message):
        return self.run_command('commit', [self.path, '-m', message])
 
+    def cleanup(self):
+        return self.run_command('cleanup', [self.path])
+
+    def revert(self, revert_all=False):
+        args = [self.path]
+        if revert_all:
+            args += ['--depth', 'infinity']
+        return self.run_command('revert', args)
+
     def status(self, path=None):
         if path is not None:
             path = os.path.join(self.path, path)
@@ -53,3 +62,4 @@ class LocalClient(svn.common.CommonClient):
 
     def __repr__(self):
         return ('<SVN(LOCAL) %s>' % (self.path))
+
