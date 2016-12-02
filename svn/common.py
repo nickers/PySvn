@@ -199,7 +199,7 @@ class CommonClient(object):
             args += ['-r', timestamp_from_phrase + ':' + timestamp_to_phrase]
         
         if revision is not None:
-            args += ['-r', str(int(revision))]
+            args += ['-r', str(revision)]
 
 
         if limit is not None:
