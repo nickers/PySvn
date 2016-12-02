@@ -38,15 +38,11 @@ class CommonClient(object):
         _logger.debug("RUN: %s" % (cmd,))
         return_binary = True
 
-        DETECTED_ENCODING=sys.stdout.encoding
-
         p = subprocess.Popen(cmd, 
                              stdout=subprocess.PIPE, 
                              stderr=subprocess.STDOUT,
                              universal_newlines=not return_binary)
         try:
-            #stdout = io.TextIOWrapper(p.stdout, DETECTED_ENCODING).read() if not return_binary else p.stdout
-            #stdout = io.TextIOWrapper(p.stdout, DETECTED_ENCODING).read()
             stdout = p.stdout.read()
             r = p.wait()
             if r != success_code:
@@ -58,7 +54,7 @@ class CommonClient(object):
             return stdout if combine is True else stdout.splitlines()
         except Exception as e:
             # print(' '.join(cmd))
-            import traceback
+            # import traceback
             # traceback.print_exc()
             raise
 
