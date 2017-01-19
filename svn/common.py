@@ -11,19 +11,30 @@ import svn.constants
 
 _logger = logging.getLogger('svn')
 
+class _PasswordHolder(object):
+    def __init__(self, password):
+        self.password = password
+    def __repr__(self):
+        return '*****'
+    def __str__(self):
+        return self.password
+    def is_(self, b):
+        return self.password is b
+    def is_not(self, b):
+        return self.password is not b
 
 class CommonClient(object):
     def __init__(self, url_or_path, type_, *args, **kwargs):
         self.__url_or_path = url_or_path
         self.__username = kwargs.pop('username', None)
-        self.__password = kwargs.pop('password', None)
+        self.__password = _PasswordHolder(kwargs.pop('password', None))
 
         if type_ not in (svn.constants.LT_URL, svn.constants.LT_PATH):
             raise ValueError("Type is invalid: %s" % (type_))
 
         self.__type = type_
 
-    def run_command(self, subcommand, args, success_code=0, 
+    def run_command(self, subcommand, args, success_code=0,
                     return_stderr=False, combine=False, return_binary=False):
 # TODO(dustin): return_stderr is no longer implemented.
         cmd = ['svn', '--non-interactive']
@@ -38,15 +49,15 @@ class CommonClient(object):
         _logger.debug("RUN: %s" % (cmd,))
         return_binary = True
 
-        p = subprocess.Popen(cmd, 
-                             stdout=subprocess.PIPE, 
+        p = subprocess.Popen([str(c) for c in cmd],
+                             stdout=subprocess.PIPE,
                              stderr=subprocess.STDOUT,
                              universal_newlines=not return_binary)
         try:
             stdout = p.stdout.read()
             r = p.wait()
             if r != success_code:
-                raise ValueError("Command failed with (%d): %s\n%s" % 
+                raise ValueError("Command failed with (%d): %s\n%s" %
                                  (p.returncode, cmd, stdout))
             if return_binary is True:
                 return stdout
@@ -66,7 +77,7 @@ class CommonClient(object):
                 continue
 
             pivot = row.index(': ')
-            
+
             k = row[:pivot]
             v = row[pivot + 2:]
 
@@ -83,8 +94,8 @@ class CommonClient(object):
             full_url_or_path += '/' + rel_path
 
         result = self.run_command(
-                    'info', 
-                    ['--xml', full_url_or_path], 
+                    'info',
+                    ['--xml', full_url_or_path],
                     combine=True)
 
         root = xml.etree.ElementTree.fromstring(result)
@@ -106,7 +117,7 @@ class CommonClient(object):
                                    len(relative_url) \
                                 else None,
 
-# TODO(dustin): These are just for backwards-compatibility. Use the ones added 
+# TODO(dustin): These are just for backwards-compatibility. Use the ones added
 #               below.
 
             'entry#kind': entry_attr['kind'],
@@ -137,7 +148,7 @@ class CommonClient(object):
             'commit#revision': int(commit_attr['revision']),
         }
 
-        # Set some more intuitive keys, because no one likes dealing with 
+        # Set some more intuitive keys, because no one likes dealing with
         # symbols. However, we retain the old ones to maintain backwards-
         # compatibility.
 
@@ -157,16 +168,16 @@ class CommonClient(object):
 
     def cat(self, rel_filepath):
         return self.run_command(
-                'cat', 
-                [self.__url_or_path + '/' + rel_filepath], 
+                'cat',
+                [self.__url_or_path + '/' + rel_filepath],
                 return_binary=True)
 
     def log(self, *args, **kwargs):
         return self.log_default(*args, **kwargs)
 
-    def log_default(self, timestamp_from_dt=None, timestamp_to_dt=None, 
+    def log_default(self, timestamp_from_dt=None, timestamp_to_dt=None,
                     limit=None, rel_filepath=None, changes=False, revision=None):
-        """Allow for the most-likely kind of log listing: the complete list, a 
+        """Allow for the most-likely kind of log listing: the complete list, a
         FROM and TO timestamp, a FROM timestamp only, or a quantity limit.
         """
 
@@ -193,7 +204,7 @@ class CommonClient(object):
                 timestamp_to_phrase = 'HEAD'
 
             args += ['-r', timestamp_from_phrase + ':' + timestamp_to_phrase]
-        
+
         if revision is not None:
             args += ['-r', str(revision)]
 
@@ -205,13 +216,13 @@ class CommonClient(object):
             args += ['-v']
 
         result = self.run_command(
-                    'log', 
-                    args + ['--xml', full_url_or_path], 
+                    'log',
+                    args + ['--xml', full_url_or_path],
                     combine=True)
 
         root = xml.etree.ElementTree.fromstring(result)
         c = collections.namedtuple(
-                'LogEntry', 
+                'LogEntry',
                 ['date', 'msg', 'revision', 'author', 'changes'])
 
         file_entry =  collections.namedtuple(
@@ -219,7 +230,7 @@ class CommonClient(object):
             ['action', 'path'])
 
         get_changed_files =  lambda log_entry: [file_entry(action=path.attrib['action'], path=path.text) for paths in log_entry.getchildren() if paths.tag=='paths' for path in paths]
-        
+
         for e in root.findall('logentry'):
             entry_info = {x.tag: x.text for x in e.getchildren()}
 
@@ -302,7 +313,7 @@ class CommonClient(object):
                 }
 
 
-    def list_recursive(self, rel_path=None, yield_dirs=False, 
+    def list_recursive(self, rel_path=None, yield_dirs=False,
                        path_filter_cb=None):
         q = [rel_path]
         while q:
